@@ -1,0 +1,226 @@
+Sub Excel2Array()
+'
+' This script convert excel table to html format with a nice rendering (fancyTable.js).
+' Input : excel table
+' Output : html code
+'
+' Usage :
+' 1-Enter the table to convert in a worsheet and select the data area (including headers).
+' 2-Launch the vba script.
+'   The html code output is displayed in a new "Results" worksheet.
+'   If a worsheet "Results" already exists, a user dialog is posted to confirm deletion.
+'   The code is automatically copied to the clipboard, ready to be pasted.
+'   The html table title corresponds to the worsheet name.
+'
+'Options :
+' Initial sort column: sortColumn (Default : sortColumn:0)
+' Number of rows per page : perPage (Default : perPage:10)
+
+
+
+
+    Dim iSh As Worksheet
+    Dim iRow As Double, iCol As Double, iVal As String, count As Double
+    Dim indentSpaces As Double
+    Dim strarray() As String
+    Dim lStr As String
+    
+    Dim topRow As Long
+    Dim bottomRow As Long
+    Dim leftColumn As Integer
+    Dim rightColumn As Integer
+    
+    Dim check As Boolean
+
+    
+    topRow = Selection.Row
+    bottomRow = Selection.Rows.count + topRow - 1
+    leftColumn = Selection.Column
+    rightColumn = Selection.Columns.count + leftColumn - 1
+    
+    'Number of space to use for html code formating
+    indentSpaces = 4
+    
+    'Delete all formatting
+    Cells.ClearFormats
+
+    'Get the number of rows and columns
+    Set iSh = ThisWorkbook.Sheets(1)
+
+    'Create a new "Results" worksheet (if already exist, delete)
+    For Each Sheet In Worksheets
+    If Sheet.Name Like "Results" Then check = True: Exit For
+    Next
+    If check = True Then
+    Worksheets("Results").Delete
+    End If
+    count = 0
+    Sheets.Add(After:=Sheets(Sheets.count)).Name = "Results"
+    
+    lStr = lStr & vbCr & "<html>"
+    lStr = lStr & vbCr & "<head>"
+    lStr = lStr & vbCr & "  <script src='https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js'></script>"
+    lStr = lStr & vbCr & "  <link rel='stylesheet' href='https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css'>"
+    lStr = lStr & vbCr & "  <link rel='stylesheet' href='https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css' >"
+    lStr = lStr & vbCr & "</head>"
+    lStr = lStr & vbCr & "<body>"
+    lStr = lStr & vbCr & "  <h1>Title</h1>"
+    lStr = lStr & vbCr & "  <div id='myGrid' style='height: 500px; width:100%;' class='ag-theme-alpine'></div>"
+    lStr = lStr & vbCr & "           <div style='display: flex; flex-direction: column; height: 100%'>"
+    lStr = lStr & vbCr & "           <div style='margin: 10px 0'>"
+    lStr = lStr & vbCr & "               <button onclick='onBtnUpdate()'>Show CSV export content text</button>"
+    lStr = lStr & vbCr & "           </div>"
+    lStr = lStr & vbCr & "           <div style='flex: 1 1 0; position: relative'>"
+    lStr = lStr & vbCr & "               <div id='gridContainer'>"
+    lStr = lStr & vbCr & "                   <div id='myGrid' style='width: 100%; height: 100%; display: block' class='ag-theme-alpine'>"
+    lStr = lStr & vbCr & "                   </div>"
+    lStr = lStr & vbCr & "               </div>"
+    lStr = lStr & vbCr & "               <textarea id='csvResult'>Click the Show CSV export content button to view exported CSV here</textarea>"
+    lStr = lStr & vbCr & "           </div>"
+    lStr = lStr & vbCr & "       </div>"
+    lStr = lStr & vbCr & "       "
+    lStr = lStr & vbCr & " <style>"
+    lStr = lStr & vbCr & "   label,"
+    lStr = lStr & vbCr & "   .row {"
+    lStr = lStr & vbCr & "     box-sizing: border-box;"
+    lStr = lStr & vbCr & "    display: block;"
+    lStr = lStr & vbCr & "    padding: 2px;"
+    lStr = lStr & vbCr & "  }"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "  .row label {"
+    lStr = lStr & vbCr & "    display: inline;"
+    lStr = lStr & vbCr & "    padding: 0;"
+    lStr = lStr & vbCr & "  }"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "  button {"
+    lStr = lStr & vbCr & "    display: inline-block;"
+    lStr = lStr & vbCr & "    font-weight: bold;"
+    lStr = lStr & vbCr & "  }"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "  #gridContainer {"
+    lStr = lStr & vbCr & "    height: 100%;"
+    lStr = lStr & vbCr & "    width: 47%;"
+    lStr = lStr & vbCr & "    display: block;"
+    lStr = lStr & vbCr & "  }"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "  #csvResult {"
+    lStr = lStr & vbCr & "    height: 10%;"
+    lStr = lStr & vbCr & "    width: 100%;"
+    lStr = lStr & vbCr & "    margin-left: 5%;"
+    lStr = lStr & vbCr & "    position: absolute;"
+    lStr = lStr & vbCr & "    top: 0;"
+    lStr = lStr & vbCr & "    right: 0;"
+    lStr = lStr & vbCr & "    font-size: 1em;"
+    lStr = lStr & vbCr & "  }"
+    lStr = lStr & vbCr & "</style>"
+    lStr = lStr & vbCr & "  <script type='text/javascript' charset='utf-8'>"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "const columnDefs = ["
+
+
+    strarray = Split(lStr, vbCr)
+    
+    For n = 1 To UBound(strarray)
+        Worksheets("Results").Cells(n, 1).Value = strarray(n)
+    Next n
+    
+    count = UBound(strarray) + 1
+
+   
+    'columnDefs
+        colcount = 1
+        For iCol = leftColumn To rightColumn
+            'Value of current cell of excel table
+            iVal = iSh.Cells(topRow, iCol).Value
+            'Carriage return character (Ch(10)) leads to display problem, so we replace by coma
+            iVal = Replace(iVal, Chr(10), ", ")
+            
+
+
+            Worksheets("Results").Cells(count, 1).Value = "{ headerName: '" & iVal & "', field:'col" & colcount & "', filter: 'agTextColumnFilter' },// or agNumberColumnFilter or agDateColumnFilter"
+            colcount = colcount + 1
+            count = count + 1
+        Next iCol
+        
+        
+        Worksheets("Results").Cells(count, 1).Value = "];"
+        count = count + 1
+        Worksheets("Results").Cells(count, 1).Value = "const rowData = ["
+        count = count + 1
+    
+    
+    For iRow = topRow + 1 To bottomRow
+    colcount = 1
+    txt = "{ "
+              
+        For iCol = leftColumn To rightColumn
+            'Value of current cell of excel table
+            iVal = iSh.Cells(iRow, iCol).Value
+            'Carriage return character (Ch(10)) leads to display problem, so we replace by coma
+            iVal = Replace(iVal, Chr(10), ", ")
+       
+            'We adapt
+            If IsNumeric(iVal) = False Then
+                txt = txt & "col" & colcount & ": '" & iVal & "', "
+            Else
+                txt = txt & "col" & colcount & ": " & iVal & ", "
+            End If
+            
+            colcount = colcount + 1
+        Next iCol
+        
+        Worksheets("Results").Cells(count, 1).Value = txt & "},"
+            count = count + 1
+
+
+    Next iRow
+    
+            Worksheets("Results").Cells(count, 1).Value = "];"
+               count = count + 1
+    lStr = ""
+    lStr = lStr = lStr & vbCr & "];"
+    lStr = lStr & vbCr & "    const gridOptions = {"
+    lStr = lStr & vbCr & "        defaultColDef: {"
+    lStr = lStr & vbCr & "        sortable: true,"
+    lStr = lStr & vbCr & "        filter: true,"
+    lStr = lStr & vbCr & "        resizable: true"
+    lStr = lStr & vbCr & "      },"
+    lStr = lStr & vbCr & "      pagination: true,"
+    lStr = lStr & vbCr & "      paginationPageSize: 10,"
+    lStr = lStr & vbCr & "      columnDefs: columnDefs,"
+    lStr = lStr & vbCr & "      rowData: rowData"
+    lStr = lStr & vbCr & "    };"
+    lStr = lStr & vbCr & "      function onBtnExport() {"
+    lStr = lStr & vbCr & "      gridOptions.api.exportDataAsCsv();"
+    lStr = lStr & vbCr & "      }"
+    lStr = lStr & vbCr & "      function onBtnUpdate() {"
+    lStr = lStr & vbCr & "        document.querySelector('#csvResult').value = gridOptions.api.getDataAsCsv();"
+    lStr = lStr & vbCr & "      }"
+    lStr = lStr & vbCr & "    const eGridDiv = document.querySelector('#myGrid');"
+    lStr = lStr & vbCr & "    new agGrid.Grid(eGridDiv, gridOptions);"
+    lStr = lStr & vbCr & "  </script>"
+    lStr = lStr & vbCr & "</body>"
+    lStr = lStr & vbCr & ""
+    lStr = lStr & vbCr & "</html>"
+    
+    
+
+    strarray = Split(lStr, vbCr)
+    
+    For n = 1 To UBound(strarray)
+    
+        Worksheets("Results").Cells(count, 1).Value = strarray(n)
+        count = count + 1
+    
+    Next n
+    
+
+    Worksheets("Results").Range(Cells(1, 1), Cells(count, 1)).Select
+    Selection.copy
+
+    
+    'Notify User
+    MsgBox "The html code is copied to your clipboard!", vbInformation
+  
+  
+End Sub

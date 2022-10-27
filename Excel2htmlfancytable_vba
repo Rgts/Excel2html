@@ -1,0 +1,171 @@
+Sub Excel2htmlFancyTable()
+'
+' This script convert excel table to html format with a nice rendering (fancyTable.js).
+' Input : excel table
+' Output : html code
+'
+' Usage :
+' 1-Enter the table to convert in a worsheet and select the data area (including headers).
+' 2-Launch the vba script.
+'   The html code output is displayed in a new "Results" worksheet.
+'   If a worsheet "Results" already exists, a user dialog is posted to confirm deletion.
+'   The code is automatically copied to the clipboard, ready to be pasted.
+'   The html table title corresponds to the worsheet name.
+'
+'Options :
+' Initial sort column: sortColumn (Default : sortColumn:0)
+' Number of rows per page : perPage (Default : perPage:10)
+
+
+    Dim iSh As Worksheet
+    Dim iRow As Double, iCol As Double, iVal As String, count As Double
+    Dim indentSpaces As Double
+    Dim strarray() As String
+    Dim lStr As String
+    
+    Dim topRow As Long
+    Dim bottomRow As Long
+    Dim leftColumn As Integer
+    Dim rightColumn As Integer
+    
+    Dim check As Boolean
+
+    
+    topRow = Selection.Row
+    bottomRow = Selection.Rows.count + topRow - 1
+    leftColumn = Selection.Column
+    rightColumn = Selection.Columns.count + leftColumn - 1
+    
+    'Number of space to use for html code formating
+    indentSpaces = 4
+    
+    'Delete all formatting
+    Cells.ClearFormats
+
+    'Get the number of rows and columns
+    Set iSh = ThisWorkbook.Sheets(1)
+
+    'Create a new "Results" worksheet (if already exist, delete)
+    For Each Sheet In Worksheets
+    If Sheet.Name Like "Results" Then check = True: Exit For
+    Next
+    If check = True Then
+    Worksheets("Results").Delete
+    End If
+    count = 0
+    Sheets.Add(After:=Sheets(Sheets.count)).Name = "Results"
+    
+    
+    lStr = ""
+    lStr = lStr & vbCr & "<!DOCTYPE html>"
+    lStr = lStr & vbCr & "<html lang='en'>"
+    lStr = lStr & vbCr & "    <head>"
+    lStr = lStr & vbCr & "        <meta charset='utf-8'>"
+    lStr = lStr & vbCr & "        <meta name='viewport'"
+    lStr = lStr & vbCr & "            Content = 'width=device-width,"
+    lStr = lStr & vbCr & "                initial-scale=1, shrink-to-fit=yes'>"
+    lStr = lStr & vbCr & "        <link href="
+    lStr = lStr & vbCr & " 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css'"
+    lStr = lStr & vbCr & "        rel='stylesheet'>"
+    lStr = lStr & vbCr & "    </head>"
+    lStr = lStr & vbCr & "    <body><br/>"
+    lStr = lStr & vbCr & "        <div>"
+    lStr = lStr & vbCr & "            <b>" & iSh.Name & " </b>"
+    lStr = lStr & vbCr & "            <table id='mytableID' style='width:100%'"
+    lStr = lStr & vbCr & "                class = 'table-striped sampleTable' >"
+    
+
+
+    strarray = Split(lStr, vbCr)
+    
+    For n = 1 To UBound(strarray)
+        Worksheets("Results").Cells(n, 1).Value = strarray(n)
+    Next n
+    
+    count = UBound(strarray)
+
+    For iRow = topRow To bottomRow
+    
+        If iRow = topRow Then
+            'TR
+            Worksheets("Results").Cells(count + 1, 1).Value = Space(3 * indentSpaces) & "<thead><tr>"
+        Else
+            Worksheets("Results").Cells(count + 1, 1).Value = Space(3 * indentSpaces) & "<tr>"
+        End If
+            
+        For iCol = leftColumn To rightColumn + 1
+            'Value of current cell of excel table
+            iVal = iSh.Cells(iRow, iCol).Value
+            'Carriage return character (Ch(10)) leads to display problem, so we replace by coma
+            iVal = Replace(iVal, Chr(10), ", ")
+            
+            'We adapt the html markup depending if header (first row) or not
+            If iRow = topRow Then
+                Worksheets("Results").Cells(count + 2, 1).Value = Space(6 * indentSpaces) & "<th>" & iVal & "</th>"
+            Else
+                Worksheets("Results").Cells(count + 2, 1).Value = Space(6 * indentSpaces) & "<td>" & iVal & "</td>"
+            End If
+            count = count + 1
+        Next iCol
+        
+        If iRow = topRow Then
+            'TR
+            Worksheets("Results").Cells(count + 1, 1).Value = Space(3 * indentSpaces) & "</thead></tr>"
+        Else
+            Worksheets("Results").Cells(count + 1, 1).Value = Space(3 * indentSpaces) & "</tr>"
+        End If
+        
+        count = count + 1
+    Next iRow
+    
+    
+    lStr = ""
+    lStr = lStr & vbCr & "            </table>"
+    lStr = lStr & vbCr & "        </div>"
+    lStr = lStr & vbCr & "    <script src="
+    lStr = lStr & vbCr & " 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'>"
+    lStr = lStr & vbCr & "        </script>"
+    lStr = lStr & vbCr & "        <script src="
+    lStr = lStr & vbCr & " 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js'>"
+    lStr = lStr & vbCr & "        </script>"
+    lStr = lStr & vbCr & "        <script src='https://cdn.jsdelivr.net/npm/jquery.fancytable/dist/fancyTable.min.js'></script>"
+    lStr = lStr & vbCr & "        </script>"
+    lStr = lStr & vbCr & "        <script type='text/javascript'>"
+    lStr = lStr & vbCr & "            $(document).ready(function() {"
+    lStr = lStr & vbCr & "                $('.sampleTable').fancyTable({"
+    lStr = lStr & vbCr & "                /* Column number for initial sorting*/"
+    lStr = lStr & vbCr & "                sortColumn:0,"
+    lStr = lStr & vbCr & "                /* Setting pagination or enabling */"
+    lStr = lStr & vbCr & "                pagination: true,"
+    lStr = lStr & vbCr & "                /* Rows per page kept for display */"
+    lStr = lStr & vbCr & "                perPage:10,"
+    lStr = lStr & vbCr & "                globalSearch:false"
+    lStr = lStr & vbCr & "                });"
+    lStr = lStr & vbCr & "            });"
+    lStr = lStr & vbCr & "        </script>"
+    lStr = lStr & vbCr & "    </body>"
+    lStr = lStr & vbCr & "</html>"
+    
+    
+
+    strarray = Split(lStr, vbCr)
+    
+    For n = 1 To UBound(strarray)
+    
+        Worksheets("Results").Cells(count, 1).Value = strarray(n)
+        count = count + 1
+    
+    Next n
+    
+
+    Worksheets("Results").Range(Cells(1, 1), Cells(count, 1)).Select
+    Selection.copy
+    
+    'Notify User
+    MsgBox "The html code is copied to your clipboard!", vbInformation
+  
+  
+End Sub
+
+
+
